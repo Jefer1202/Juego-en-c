@@ -1,3 +1,270 @@
-# Juego-en-c
+// Juego-en-c
 
+#include <vector>
+#include <windows.h>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+#include <conio.h>
+#include <string>
+
+// Simbolos o Caracteres
+#define CARACTER_FANTASMA 2
+
+// Movimiento con las teclas
+#define TECLA_ARRIBA       'i'
+#define TECLA_ABAJO        'k'
+#define TECLA_IZQUIERDA    'j'
+#define TECLA_DERECHA      'l'
+
+// Dirección de pacman
+#define DIRECCION_IZQUIERDA 0
+#define DIRECCION_DERECHA   1
+#define DIRECCION_ARRIBA    2
+#define DIRECCION_ABAJO     3
+#define DIRECCION_INVALIDA  -1
+
+
+// Define los colores
+#define COLOR_PARED            0x009 // AZUL CLARO
+#define COLOR_COMIDA           0x00F // BLANCO BRILLANTE
+#define COLOR_PACMAN           0x00E // AMARILLO
+#define COLOR_FANTASMA1        0x00C // ROJO CLARO
+#define COLOR_FANTASMA2        0x00D  // PÚRPURA CLARO
+#define COLOR_FANTASMA3        0x00B // AGUAMARINA CLARO
+#define COLOR_FANTASMA4        0x00A // VERDE CLARO
+#define COLOR_MARCADOR         0x00F   // BLANCO_BRILLANTE
+#define COLOR_FANTASMA_ZOMBIE  0x004 // AZUL
+
+#define BLANCO_BRILLANTE 0x00F
+
+#define NADA 0
+
+// Medidas del MAPA
+#define FILAS_MAPA         25
+#define COLUMNAS_MAPA      29
+#define LIMITE_IZQUIERDO   1
+#define LIMITE_SUPERIOR    0
+
+#define LIMITE_DERECHO (LIMITE_IZQUIERDO + COLUMNAS_MAPA - 1)
+#define LIMITE_INFERIOR (LIMITE_SUPERIOR + FILAS_MAPA - 1)
+
+// Estados finales de pacman
+#define PACMAN_VIVO        10    // Se encuentra jugando
+#define PACMAN_MUERTO      20    // Ha muerto
+#define PACMAN_GANADOR     30    // Ya ganó
+
+#define VIDAS_PACMAN 4
+#define CARACTER_PACMAN 2
+
+// Modos de estado de los fantasmas
+#define MODO_CAZADOR 1000     // Este es el modo por defecto de los fantasmas
+#define MODO_PRESA   1001     // Este modo es cuando pacman ha comida la píldora mágica
+#define MODO_INVISIBLE 1002   // Este modo es cuando el fantasma ha sido comido por pacman y está regresando a su casa
+
+#define TIEMPO_ZOMBIE 50
+
+// Función para el manejo de los colores 
+int backcolor = 0; 
+void setCColor(int color)
+{
+   static HANDLE hConsole;
+   
+   hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+   
+   SetConsoleTextAttribute(hConsole, color | (backcolor * 0x10 + 0x100));
+}
+
+
+
+char mapa[FILAS_MAPA][COLUMNAS_MAPA + 1] = {
+   "ahhhhhhhhhhhhhnhhhhhhhhhhhhhb",
+   "v@············v············@v",
+   "v·ahhb·ahhhhb·v·ahhhhb·ahhb·v",
+   "v·v  v·v    v·v·v    v·v  v·v",
+   "v·chhd·chhhhd·v·chhhhd·chhd·v",
+   "v···························v",
+   "v·hhhh·v·hhhhhnhhhhh·v·hhhh·v",
+   "v······v······v······v······v",
+   "chhhhb·phhhhh·v·hhhhho·ahhhhd",
+   "     v·v······i······v·v     ",
+   "     v·v·ahhhh2hhhhb·v·v     ", // 2 = para que vaya hacia arriba
+   "hhhhhd·v·v    2    v·v·chhhhh",
+   "·········v    2    v·········",
+   "hhhhhb·v·v    2    v·v·ahhhhh",
+   "     v·v·chhhhhhhhhd·v·v     ",
+   "     v·v·············v·v     ",
+   "ahhhhd·v·hhhhhnhhhhh·v·chhhhb",
+   "v·············v·············v",
+   "v·hhhb·hhhhhh·v·hhhhhh·ahhh·v",
+   "v····v·················v····v",
+   "phhh·v·v·hhhhhnhhhhh·v·v·hhho",
+   "v······v······v······v······v",
+   "v·hhhhhmhhhhh·v·hhhhhmhhhhh·v",
+   "v@·························@v",
+   "chhhhhhhhhhhhhhhhhhhhhhhhhhhd",
+};
+/* v : vertical
+   h: horizontal
+   m: medio y hacia arriba   l
+   n: medio y hacia abajo    -j- 
+   o: medio y hacia la izquierda -|
+   p: medio y hacia la derecha   |-
+   a:  esquina superior izquierda 
+   b:  esquina superior derecha
+   c:  esquina inferior izquierda
+   d:  esquina inferior derecha
+   s: salida => se transformara a hosizontal
+*/
+
+int cantidad_comida = 290;    // Guarda la cantidad de comida que hay en el mapa al principio del juego
+
+
+// Esta matriz va a guardar todos los moviemientos hacia donde se va pacman. Si es que
+// pacman no pasó por algún lugar, simplemente se le asigna el caracter a que significa
+// aleatorio
+short matriz_movimientos[FILAS_MAPA][COLUMNAS_MAPA];
+
+
+using namespace std;
+
+
+/*********** DECLARACIÓN DE CLASES **********/
+class PERSONAJE;
+class PACMAN;
+class FANTASMA;
+
+class PERSONAJE {
+   private:
+      int x, y;   // Coordenadas absolutas
+      int simbolo;
+      string nombre;
+      int direccion;
+      /* La direccion de pacman tiene  posibilidades:
+         0 IZQUIERDA      : DIRECCION_IZQUIERDA
+         1 DERECHA        : DIRECCION_DERECHA
+         2 ARRIBA         : DIRECCION_ARRIBA
+         3 ABAJO          : DIRECCION_ABAJO
+         -1 NO SE MUEVE   : DIRECCION_INVALIDA
+            
+      */
+      
+      int color;
+      
+      int anteriorX, anteriorY;   // Coordenadas anteriores de x , y
+      
+   public:
+      PERSONAJE(int, int = 1, int = 1, int = 1);
+      void setX(int);
+      void setY(int);
+      void setSimbolo(int);
+      void setDireccion(int);
+      int getX();
+      int getY();
+      string getNombre();
+      void setNombre(string);
+      
+      int getColor();
+      void setColor(int);
+      
+      int getAnteriorX();
+      int getAnteriorY();
+      
+      int getXRelativoAlMapa();
+      int getYRelativoAlMapa();
+      
+      int getAnteriorXRelativoAlMapa();   // Obtiene las coordenadas anteriores relativas al mapa
+      int getAnteriorYRelativoAlMapa();
+      
+      int getSimbolo();
+      int getDireccion();
+      virtual void mover(int);
+      virtual void pintar();
+      void borrar();
+      
+      int direccionVerdadera(int);
+      
+      bool esPosibleIrA(int posible_direccion);
+      
+}; // Fin de la declaración de la clase PERSONAJE
+
+
+
+class PACMAN : public PERSONAJE {
+   private:
+      int puntaje;
+      int vidas;     // Generalmente tiene tres vidas
+      bool sigue_jugando;  // Cuando pierde todas sus vidas, ya no sigue jugando
+      
+   public:
+      PACMAN(int color = COLOR_PACMAN, int x = LIMITE_IZQUIERDO + 14, int y = LIMITE_SUPERIOR + 15, int simbolo = CARACTER_PACMAN);
+      void setPuntaje(int puntaje);
+      int getPuntaje();
+      void actualizar_puntaje();
+      void setVidas(int vidas);
+      int getVidas();
+      void setSigueJugando(bool);
+      bool getSigueJugando();
+      bool choque(vector<FANTASMA> *,int &modo, FANTASMA **fantasma);
+      int estadoFinalPacman(); // Retorna PACMAN_VIVO, PACMAN_MUERTO, PACMAN_GANADOR
+      // No redefinimos el método pintar() así que se llamará al de la superclase
+      void imprimirVidas();
+      void reiniciaCoordenadas();
+      bool comioPildora();
+}; // Fin de la declaración de la clase PACMAN
+
+
+class FANTASMA : public PERSONAJE {
+   private:
+      int modo;   // CAZADOR, PRESA
+      int temporizador;
+      bool temporizador_activado;
+   public:
+      // FANTASMA(int = (LIMITE_IZQUIERDO + LIMITE_DERECHO) / 2, int = (LIMITE_SUPERIOR + LIMITE_INFERIOR) / 2, int = 1);
+      FANTASMA(int color, int = LIMITE_IZQUIERDO + 10, int = LIMITE_SUPERIOR + 12, int = CARACTER_FANTASMA);
+      void mover();
+      void setModo(int modo);
+      int getModo();
+      virtual void reiniciar_coordenadas();
+      void setColorPredeterminado();
+      int getTemporizador();
+      void setTemporizador(int temporizador);
+}; // Fin de la declaración de la clase FANTASMA
+
+
+class FANTASMA_ROJO : public FANTASMA {
+   private:
+      
+   public:
+      FANTASMA_ROJO();
+      void reiniciar_coordenadas();
+};
+
+
+class FANTASMA_ROSADO : public FANTASMA {
+   private:
+      
+   public:
+      FANTASMA_ROSADO();
+      void reiniciar_coordenadas();
+};
+
+
+class FANTASMA_CELESTE : public FANTASMA {
+   private:
+      
+   public:
+      FANTASMA_CELESTE();
+      void reiniciar_coordenadas();
+};
+
+
+class FANTASMA_VERDE : public FANTASMA {
+   private:
+      
+   public:
+      FANTASMA_VERDE();
+      void reiniciar_coordenadas();
+};
+/******FIN DE LAS DECLARACIONES DE LAS CLASES********/
 
