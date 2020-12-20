@@ -942,3 +942,194 @@ void PERSONAJE::borrar() {
    gotoxy2(x, y);
    cout << " ";
 }
+
+/---------------------------------------------------------Parte de catota------------------------------------------------------------------------/
+
+/*
+A esta función le puedo pasar la dirección directamente: 
+   DIRECCION_ARRIBA, DIRECCION_ABAJO, DIRECCION_IZQUIERDA, DIRECCION_DERECHA
+
+O sino le puedo pasar la tecla presionada y si es la correcta:
+   TECLA_ARRIBA, TECLA_ABAJO, TECLA_IZQUIERDA, TECLA_DERECHA
+   
+esta función retorna la dirección correcta correspondiente:
+   DIRECCION_ARRIBA, DIRECCION_ABAJO, DIRECCION_IZQUIERDA, DIRECCION_DERECHA
+
+Si se le pasa una tecla no válida, retorna -2, que significa que no debe de asignarse esta direccion
+*/
+int PERSONAJE::direccionVerdadera(int teclaDireccional) {
+   if (teclaDireccional == DIRECCION_ARRIBA ||
+       teclaDireccional == DIRECCION_ABAJO ||
+       teclaDireccional == DIRECCION_IZQUIERDA ||
+       teclaDireccional == DIRECCION_DERECHA ||
+       teclaDireccional == DIRECCION_INVALIDA) {   // Para que no se mueva
+       return teclaDireccional;
+    
+    } else {
+    
+      if (teclaDireccional == TECLA_IZQUIERDA)
+         return DIRECCION_IZQUIERDA;
+         
+      else if (teclaDireccional == TECLA_DERECHA)
+         return DIRECCION_DERECHA;
+         
+      else if (teclaDireccional == TECLA_ARRIBA)
+         return DIRECCION_ARRIBA;
+         
+      else if (teclaDireccional == TECLA_ABAJO)
+         return DIRECCION_ABAJO;
+         
+      else
+         return -2;
+   }
+}
+
+bool PERSONAJE::esPosibleIrA(int posible_direccion) {
+   bool puede_ir = true;
+   
+   // Obtenemos las coordenadas de PACMAN respecto del mapa
+   int mx = this->getXRelativoAlMapa();
+   int my = this->getYRelativoAlMapa();
+   
+   // Calculamos la posible dirección donde nos queremos mover
+   switch (posible_direccion) {
+      
+      case TECLA_ARRIBA: case DIRECCION_ARRIBA:
+         my -= 1;
+         break;
+         
+      case TECLA_ABAJO: case DIRECCION_ABAJO:
+         my += 1;
+         break;
+         
+      case TECLA_IZQUIERDA: case DIRECCION_IZQUIERDA:
+         mx -= 1;
+         break;
+         
+      case TECLA_DERECHA: case DIRECCION_DERECHA:
+         mx += 1;
+         break;
+   }
+   
+   if (esPared(mapa[my][mx])) {
+      puede_ir = false;
+   }
+   
+   return puede_ir;
+}
+
+
+
+
+PACMAN::PACMAN(int color, int x, int y, int simbolo) : PERSONAJE(color, x, y, simbolo) {
+   this->setDireccion(DIRECCION_IZQUIERDA);
+   this->setNombre("pacman");
+   this->setPuntaje(0);
+   this->setVidas(VIDAS_PACMAN);
+   this->setSigueJugando(true);
+}
+
+void PACMAN::setPuntaje(int puntaje) {
+   this->puntaje = (puntaje > 0) ? puntaje : 0;
+}
+
+int PACMAN::getPuntaje() {
+   return puntaje;
+}
+
+void PACMAN::actualizar_puntaje() {
+   int mx = this->getXRelativoAlMapa();
+   int my = this->getYRelativoAlMapa();
+   
+   if (mapa[my][mx] == '·' ||mapa[my][mx] == '@') {
+      this->setPuntaje(this->getPuntaje() + 1);
+      mapa[my][mx] = ' ';
+   }
+}
+
+int PACMAN::getVidas() {
+   return this->vidas;
+}
+
+void PACMAN::setVidas(int vidas) {
+   this->vidas = (vidas > 0) ? vidas : 0;
+}
+
+bool PACMAN::getSigueJugando() {
+   return this->sigue_jugando;
+}
+
+void PACMAN::setSigueJugando(bool sigue_jugando) {
+   this->sigue_jugando = sigue_jugando;
+}
+
+int PACMAN::estadoFinalPacman() {
+   if (this->getPuntaje() == cantidad_comida) {
+      return PACMAN_GANADOR;
+   }
+}
+
+bool PACMAN::choque(vector <FANTASMA> *fantasmas, int &modo_fantasma, FANTASMA **fantasma) {
+   // Retorna el modo del fantasma con el que chocó
+   // Retorna un puntero al fantasma chocado para poder cambiar de él su modo, su color y demás cosas
+   
+   // Coordenadas absolutas de Pacman
+   int x = this->getX();
+   int y = this->getY();
+   int anterior_px = this->getAnteriorX();
+   int anterior_py = this->getAnteriorY();
+   
+   // Coordenadas absolutas de cada fantasma
+   int fx, fy, anterior_fx, anterior_fy;
+   
+   for (int i = 0; i < fantasmas->size(); ++i) {
+      // Obtenemos las coordenadas del fantasma actual
+      fx = (*fantasmas)[i].getX();
+      fy = (*fantasmas)[i].getY();
+      anterior_fx = (*fantasmas)[i].getAnteriorX();
+      anterior_fy = (*fantasmas)[i].getAnteriorY();
+      
+      // El choque se produce cuando coinciden sus coordenadas o sino, en caso que
+      // se crucen al mismo tiempo sin coincidir sus coordenadas, el choque se produce
+      // si conciden sus coordenadas anteriores de uno con sus coordenadas actuales del otro
+      if ((x == fx && y == fy) || (x == anterior_fx && y == anterior_fy)) {
+         modo_fantasma = (*fantasmas)[i].getModo();   // Guardamos el modo en que estaba el fantasma
+         (*fantasma) = &((*fantasmas)[i]);     // Guardamos la dirección del fantasma con el que choqué para aplicarle los respectivos cambios de símbolo
+
+         gotoxy2(fx, fy); cout << " "; // borramos al fantasma para que desparezca
+         return true;
+      }
+   }
+   
+   return false;
+}
+
+void PACMAN::imprimirVidas() {
+   setCColor(COLOR_PACMAN);
+   gotoxy2(LIMITE_IZQUIERDO, LIMITE_INFERIOR + 1);
+   cout << "       ";
+   
+   int vidas = this->getVidas();
+   
+   for (int i = 0; i < vidas; ++i) {
+      gotoxy2(LIMITE_IZQUIERDO + i + 1, LIMITE_INFERIOR + 1);
+      printf("%c", CARACTER_PACMAN);
+   }
+}
+
+void PACMAN::reiniciaCoordenadas() {
+   this->setX(LIMITE_IZQUIERDO + 14);
+   this->setY(LIMITE_SUPERIOR + 15);
+}
+
+bool PACMAN::comioPildora() {
+   
+   int mx = this->getXRelativoAlMapa();
+   int my = this->getYRelativoAlMapa();
+   
+   if (mapa[my][mx] == '@') { // Significa que comió la píldora
+      return true;
+   } else {
+      return false;
+   }
+}
