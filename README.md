@@ -1,5 +1,6 @@
 // Juego-en-c
 
+/*-------------------------------------------------------------------------------------------------------------------------------------------Parte de Jeferson*/
 #include <vector>
 #include <windows.h>
 #include <cstdio>
@@ -267,4 +268,30 @@ class FANTASMA_VERDE : public FANTASMA {
       void reiniciar_coordenadas();
 };
 /******FIN DE LAS DECLARACIONES DE LAS CLASES********/
+
+
+// Funciones
+void pintar_mapa();        // Para pintar el mapa de juego con la comida
+void gotoxy2(int, int);    // Similar a gotoxy pero con la API de windows
+bool esPared(char);        // Determina si su argumento es un caracter correspondiente a la pared
+void setCColor(int color); // Para establecer el color con lo que pintaremos
+
+// Después hacer que esto sea una función miembro de pacman
+void puntaje(PACMAN pacman, char mapa[][COLUMNAS_MAPA + 1]);   // Modifica el puntaje de pacman
+
+void inicializaMatrizMovimientos();    // Inicializa el vector que guarda los movimientos de pacman
+void imprimir_informacion(class PACMAN, int tecla_presionada);   // Imprime información del juego en tiempo real
+void captura_tecla(int &tecla);  // Captura la tecla presionada y la modifica en caso se presione
+void pintar_mapa(char mapa[][COLUMNAS_MAPA + 1], int filas, int columnas);
+void empezar_juego();      // Función llamada por main para empezar el juego
+void reinicia_personajes(PACMAN &pacman, vector<FANTASMA> &fantasmas);   // Regresa a pacman y a los fantasmas a sus coordenadas iniciales
+void cuenta_regresiva(int x, int y, int limite_inferior, int limite_superior); // Hace una cuenta regresiva en las coordenadas
+void PINTA_MATRIZ_MOVIMIENTOS(); // BORRAR ESTO ES DE PRUEBA
+
+int main() 
+{
+   empezar_juego();
+   return 0;   
+}
+
 
