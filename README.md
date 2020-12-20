@@ -1,5 +1,3 @@
 # Juego-en-c
-mario 
-
 
 
