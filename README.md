@@ -695,6 +695,9 @@ void captura_tecla(int &tecla)
    // esto hace que su movimiento sea mejor
 }
 
+/*----------------------------------------------------------------------------------------------------------------------------------------------Parte de David*/
+
+
 // BORRRAR ESTA FUNCIÓN, ES SOLO DE PRUEBA
 void PINTA_MATRIZ_MOVIMIENTOS() 
 {
