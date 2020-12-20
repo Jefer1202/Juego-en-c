@@ -695,3 +695,250 @@ void captura_tecla(int &tecla)
    // esto hace que su movimiento sea mejor
 }
 
+// BORRRAR ESTA FUNCIÓN, ES SOLO DE PRUEBA
+void PINTA_MATRIZ_MOVIMIENTOS() 
+{
+   for (int i = 0; i < FILAS_MAPA; ++i) {
+      for (int j = 0; j < COLUMNAS_MAPA; ++j) {
+         gotoxy2(j + LIMITE_DERECHO + 5, i + LIMITE_SUPERIOR);
+         
+         switch (matriz_movimientos[i][j]) {
+            case -1:
+               setCColor(0x007);
+               cout << "a";
+               setCColor(0x00E);
+               break;
+               
+            case DIRECCION_ARRIBA:
+               cout << "^";
+               break;
+            
+            case DIRECCION_ABAJO:
+               cout << "v";
+               break;
+               
+            case DIRECCION_IZQUIERDA:
+               cout << "<";
+               break;
+            
+            case DIRECCION_DERECHA:
+               cout << ">";
+               break;
+         }
+      }
+   }
+}
+
+void inicializaMatrizMovimientos() 
+{
+   for (int i = 0; i < FILAS_MAPA; ++i) {
+      for (int j = 0; j < COLUMNAS_MAPA; ++j) {
+         matriz_movimientos[i][j] = DIRECCION_INVALIDA; // Lo inicializo con cualquier valor distinto de las direcciones para que no todo esté aleatorio
+      }
+   }
+}
+
+
+
+/**** DEFINICIÓN DE CLASES *****/
+/* 
+void PERSONAJE::PERSONAJE(int x, int y, char simbolo) {
+   this->setX(x);
+   this->setY(y);
+   this->setSimbolo(simbolo);
+}
+*/
+
+PERSONAJE::PERSONAJE(int color, int _x, int _y, int _simbolo) : x(_x), y(_y), simbolo(_simbolo) {
+   this->setColor(color);
+   this->pintar();
+   this->setDireccion(DIRECCION_IZQUIERDA); // Direccion por defecto
+
+   this->anteriorX = 0;
+   this->anteriorY = 0;
+}
+
+void PERSONAJE::setX(int x) {
+   this->x = (x >= 0 ? x : 0);
+   // x = (x > 0 ? x : 1); // Cuidado con este error lógico, allí no estaría modificando el atributo
+}
+
+void PERSONAJE::setY(int y) {
+   this->y = (y >= 0 ? y : 0);
+}
+
+void PERSONAJE::setSimbolo(int simbolo) {
+   this->simbolo = simbolo;
+}
+
+void PERSONAJE::setNombre(string nombre) {
+   this->nombre = nombre;
+}
+
+string PERSONAJE::getNombre() {
+   return this->nombre;
+}
+/* Los valores que puede tener la variable direccion son 4:
+   - DIRECCION_IZQUIERDA
+   - DIRECCION_DERECHA
+   _ DIRECCION_ARRIBA
+   _ DIRECCION_ABAJO
+   - DIRECCION_INVALIDA : El personaje tendrá este valor de dirección cuando no se va a mover
+   
+   Estas direcciones permitirán saber para donde se va a mover, o en el caso de
+   la DIRECCION_INVALIDA que no se va a mover
+*/
+void PERSONAJE::setDireccion(int teclaDireccional) {
+   int d;
+
+   if ((d = this->direccionVerdadera(teclaDireccional)) != -2) {  // Solo le asigno una dirección valida
+      this->direccion = d;
+   } else this->direccion = DIRECCION_INVALIDA;
+   /* En caso que se presione una tecla incorrecta, No se modifica el valor actual de la dirección */
+}
+
+int PERSONAJE::getX() {
+   return this->x;
+}
+
+int PERSONAJE::getY() {
+   return this->y;
+}
+
+int PERSONAJE::getAnteriorX() {
+   return this->anteriorX;
+}
+
+int PERSONAJE::getAnteriorY(){
+   return this->anteriorY;
+}
+
+int PERSONAJE::getXRelativoAlMapa() {
+   return this->x - LIMITE_IZQUIERDO;
+}
+
+int PERSONAJE::getYRelativoAlMapa() {
+   return this->y - LIMITE_SUPERIOR;
+}
+
+int PERSONAJE::getAnteriorXRelativoAlMapa() {
+   return this->anteriorX - LIMITE_IZQUIERDO;
+}
+
+int PERSONAJE::getAnteriorYRelativoAlMapa() {
+   return this->anteriorY - LIMITE_SUPERIOR;
+}
+
+int PERSONAJE::getSimbolo() {
+   return this->simbolo;
+}
+
+
+int PERSONAJE::getDireccion() {
+   return this->direccion;
+}
+
+/* TENGO QUE PASARLE LA TECLA DIRECCIONAL PRESIONADA: TECLA_IZQUIERDA, TECLA_DERECHA, TECLA ARRIBA, TECLA_ABAJO */
+void PERSONAJE::mover(int tecla_direccional) {
+   
+   // Vamos a ver que el usuario haya presionado una tecla, osea, que tecla sea distinto de -1
+   if (tecla_direccional != -1) {
+      
+      // Si no es posible cambiar de dirección
+      if (!this->esPosibleIrA(tecla_direccional)) {
+         
+         // Y si no se puede seguir llendo en la dirección actual
+         if (!this->esPosibleIrA(this->getDireccion())) {
+            
+            // NO SE DEBE MOVER: Establecemos que tenga una direccion invalida
+            this->setDireccion(DIRECCION_INVALIDA);
+         }
+      } else { // Sí es que es posible cambiar de direccion
+         this->setDireccion(tecla_direccional);
+      }
+      
+   } else { // Si no se presionó una tecla. Solo va a seguir moviéndose si es que se puede ir en su dirección actual
+   
+      // Si no puede seguir yendo en su dirección actual, se detiene
+      if (!this->esPosibleIrA(this->getDireccion())) {
+         
+         this->setDireccion(DIRECCION_INVALIDA);   // Para que deje de moverse
+      }
+   }
+   
+   this->borrar(); // Borramos al personaje de su posición actual
+   
+   
+   // Ya tengo la dirección hacia donde me moverá
+   
+   // Si es PACMAN el que se mueve:
+   if (this->getNombre() == "pacman") { // guardo los movimientos de pacman en la matriz
+      matriz_movimientos[this->getY()][this->getX()] = this->getDireccion();
+   }
+   
+   
+   // Antes de alterar las coordenadas de un personaje, hay que guardar las anteriores
+   this->anteriorX = this->getX();
+   this->anteriorY = this->getY();
+   
+   switch (this->getDireccion()) {
+      
+      case DIRECCION_ARRIBA:
+         this->setY(this->y - 1);
+         break;
+         
+      case DIRECCION_ABAJO:
+         this->setY(this->y + 1);
+         break;
+      
+      case DIRECCION_DERECHA:
+         this->setX(this->x + 1);
+         
+         if (this->getX() > LIMITE_DERECHO) {   // Si pacman logró salirse de los bordes del mapa, significa que allí no había pared y que es el atajo derecho
+            this->setX(LIMITE_IZQUIERDO);   // Se establece la nueva coordenada
+         }
+         break;
+      
+      case DIRECCION_IZQUIERDA:
+         this->setX(this->x - 1);
+         
+         if (this->getX() < LIMITE_IZQUIERDO) {   // Si pacman logró salirse de los bordes del mapa, significa que allí no había pared y que es el atajo izquierdo
+            this->setX(LIMITE_DERECHO);   // Se establece la nueva coordenada
+         }
+         
+         break;
+   }
+   
+   // Pintamos la comida si es que esta no fue comida por pacman. Ya que los fantasmas al moverse, lo pueden borrar
+   int a_mx = this->getAnteriorXRelativoAlMapa();  // Obtenemos la posición anterior del personaje
+   int a_my = this->getAnteriorYRelativoAlMapa();
+   
+   // Evitamos borrar la comida
+   if (mapa[a_my][a_mx] == '·') {
+   // if (mapa[a_my][a_mx] != ' ' && !esPared(mapa[a_my][a_mx]) && mapa[a_my][a_mx] != 's' && mapa[a_my][a_mx] != '0') {
+      setCColor(COLOR_COMIDA); gotoxy2(anteriorX, anteriorY); cout << char(250);               // Evita que se borre la comida cuando pasa un fantasma 
+   }
+   
+   
+   // Pintamos al personaje en su nueva posición
+   this->pintar();
+}
+
+void PERSONAJE::setColor(int color) {
+   this->color = color;
+}
+
+int PERSONAJE::getColor() {
+   return this->color;
+}
+
+void PERSONAJE::pintar() {
+   setCColor(this->getColor());
+   gotoxy2(x, y);
+   cout << (char)getSimbolo();
+}
+
+void PERSONAJE::borrar() {
+   gotoxy2(x, y);
+   cout << " ";
+}
