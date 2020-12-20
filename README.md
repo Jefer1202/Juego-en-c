@@ -473,4 +473,225 @@ void empezar_juego()
       
    } while (tecla_salir != 'y');
 }
+/------------------------------------------------------------Parte de Kayner----------------------------------------------------------------------------------/
+
+// Hace una cuenta regresiva en las coordenadas (x, y) y desde limite_inferior hasta limite_superior
+void cuenta_regresiva(int x, int y, int limite_inferior, int limite_superior)
+{
+   setCColor(BLANCO_BRILLANTE);
+   for (int i = limite_superior; i >= limite_inferior; --i) {
+      gotoxy2(x, y); cout << i << "\a";
+      Sleep(750);
+   }
+   gotoxy2(x - 4, y); cout << "Empieza!!";
+   Sleep(750);
+   pintar_mapa(mapa, FILAS_MAPA, COLUMNAS_MAPA);
+}
+
+void reinicia_personajes(PACMAN &pacman, vector<FANTASMA> &fantasmas) 
+{
+   pacman.reiniciaCoordenadas();
+   pacman.setDireccion(DIRECCION_IZQUIERDA);
+   
+   for (int i = 0; i < fantasmas.size(); ++i) {
+      fantasmas[i].reiniciar_coordenadas();  // Establece sus coordenadas iniciales
+      fantasmas[i].setModo(MODO_CAZADOR); // Establece su modo inicial de todos
+   }
+}
+
+// Función que determina si el caracter c es alguno de los siguientes caracteres
+/* v : vertical
+   h: horizontal
+   m: medio y hacia arriba   l
+   n: medio y hacia abajo    -j- 
+   o: medio y hacia la izquierda -|
+   p: medio y hacia la derecha   |-
+   a:  esquina superior izquierda 
+   b:  esquina superior derecha
+   c:  esquina inferior izquierda
+   d:  esquina inferior derecha
+*/
+bool esPared(char c) 
+{
+   
+   if (c == 'v' || 
+       c == 'h' ||
+       c == 'm' ||
+       c == 'n' ||
+       c == 'o' ||
+       c == 'p' ||
+       c == 'a' ||
+       c == 'b' ||
+       c == 'c' ||
+       c == 'd') {
+      return true;
+      
+   } else {
+      return false;
+   }
+}
+
+
+
+
+
+
+
+
+// Pinta el mapa
+void pintar_mapa(char mapa[][COLUMNAS_MAPA + 1], int filas, int columnas) {
+   /* 
+   
+   v : vertical
+   h: horizontal
+   m: medio y hacia arriba   l
+   n: medio y hacia abajo    -j- 
+   o: medio y hacia la izquierda -|
+   p: medio y hacia la derecha   |-
+   a:  esquina superior izquierda
+   b:  esquina superior derecha
+   c:  esquina inferior izquierda
+   d:  esquina inferior derecha
+   @: Es la píldora mágica
+   */
+   
+   /* Pinta todo el cuerpo */
+
+   for (int i = 0; i < filas; ++i) {
+      for (int j = 0; j < columnas; ++j) {
+         
+         setCColor(COLOR_PARED);
+         gotoxy2(LIMITE_IZQUIERDO + j, LIMITE_SUPERIOR + i);
+         
+         
+         switch (mapa[i][j]) {
+            
+            case 'v':
+               cout << char(186);
+               break;
+            
+            case 'h':
+               cout << char(205);
+               break;
+            
+            case 'm':
+               cout << char(202);
+               break;
+            
+            case 'n':
+               cout << char(203);
+               break;
+               
+            case 'o':
+               cout << char(185);
+               break;
+            
+            case 'p':
+               cout << char(204);
+               break;
+               
+            case 'a':
+               cout << char(201);
+               break;
+               
+            case 'b':
+               cout << char(187);
+               break;
+               
+            case 'c':
+               cout << char(200);
+               break;
+               
+            case 'd':
+               cout << char(188);
+               break;
+            /*case 's': case '0':  // En estos casos no se imprime nada en el mapa. Solo son caracteres que sirven para que pacman se vaya hacia arriba
+               cout << " ";*/
+               
+            case '·':   // La comida de pacman
+               setCColor(COLOR_COMIDA);
+               cout << char(250);
+               break;
+            
+            case '@':   // la píldora
+               setCColor(COLOR_COMIDA);
+               cout << 'o';
+               break;
+               
+            default:
+               cout << " ";
+         }
+         
+      }
+   }
+}
+
+
+void gotoxy2(int x, int y)
+{
+   HANDLE hCon;
+   hCon = GetStdHandle(STD_OUTPUT_HANDLE);
+   COORD dwPos;
+   dwPos.X = x;
+   dwPos.Y = y;
+   
+   SetConsoleCursorPosition(hCon, dwPos);
+}
+
+
+void imprimir_informacion(class PACMAN p, int tecla_presionada)
+{
+   static int j = 0;
+   
+   gotoxy2(LIMITE_DERECHO + 10, 2); cout << "Tecla presionada: " << tecla_presionada 
+      << " \'" << (char)tecla_presionada << "\'" << endl;
+   gotoxy2(LIMITE_DERECHO + 10, 3); cout << (j++) << endl;  // Tiempo relativo
+   gotoxy2(LIMITE_DERECHO + 10, 4); cout << "Direccion: ";
+   
+   switch (p.getDireccion()) {
+      case DIRECCION_IZQUIERDA:
+         cout << "Izquierda";
+         break;
+      
+      case DIRECCION_DERECHA:
+         cout << "Derecha";
+         break;
+         
+      case DIRECCION_ARRIBA:
+         cout << "Arriba";
+         break;
+         
+      case DIRECCION_ABAJO:
+         cout << "Abajo";
+         break;
+      
+      default:
+         cout << "Desconocido";
+   }
+
+   gotoxy2(LIMITE_DERECHO + 10, 6); cout << "Posicion absoluta:   (" << p.getX() << ", " << p.getY() << ")";
+   gotoxy2(LIMITE_DERECHO + 10, 7); cout << "Posicion relativa:   (" << p.getXRelativoAlMapa() << ", " << p.getYRelativoAlMapa() << ")";
+   gotoxy2(LIMITE_DERECHO + 10, 8); cout << "Puntaje: " << p.getPuntaje() << endl;
+   gotoxy2(LIMITE_DERECHO + 10, 9); cout << "(a_x, a_y) == : " << p.getAnteriorX() << ", " << p.getAnteriorY() << ")" << endl;
+   gotoxy2(LIMITE_DERECHO + 10, 11); cout << "Cantidad comida == : " << cantidad_comida << endl;
+   
+}
+
+// Captura la tecla presionada y la modifica en caso se presione
+void captura_tecla(int &tecla) 
+{
+   if (kbhit()) {
+      tecla = getch();
+      
+      if (tecla == 's') {
+         
+      } else if (tecla != TECLA_IZQUIERDA && tecla != TECLA_DERECHA && tecla != TECLA_ARRIBA && tecla != TECLA_ABAJO) {
+      // Si presiono una tecla invalida, es como si hubiesemos presionado nada
+      tecla = -1;
+      }
+      
+   } 
+   // Si no presiono nada, conserva la tecla presionada para que pacman se vaya por esa dirección ni bien pueda,
+   // esto hace que su movimiento sea mejor
+}
 
