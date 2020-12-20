@@ -294,4 +294,183 @@ int main()
    return 0;   
 }
 
+/---------------------------------------------------------------Parte de Bryan------------------------------------------------------------------/
+
+void empezar_juego() 
+{
+   system("color");
+   // Inicializo la matriz que guarda los movimientos de pacman con -1 (es decir, aleatorio)
+   inicializaMatrizMovimientos();
+   
+   // Pintamos el mapa donde estará pacman y toda la comida actual
+   pintar_mapa(mapa, FILAS_MAPA, COLUMNAS_MAPA);
+   
+   // Creamos al pacman
+   PACMAN pacman;
+   
+   // Creando los objetos FANTASMA en tiempo de compilación
+   FANTASMA_ROJO    f1;
+   FANTASMA_ROSADO  f2;
+   FANTASMA_CELESTE f3;
+   FANTASMA_VERDE   f4;
+
+   // Guardamos los fantasmas en un vector de fantasmas
+   vector <FANTASMA> fantasmas;
+   fantasmas.push_back(f1);
+   fantasmas.push_back(f2);
+   fantasmas.push_back(f3);
+   fantasmas.push_back(f4);
+   
+   // Pintamos a pacman por primera vez
+   pacman.pintar();
+   
+   // Imprimimos las vida de Pacman
+   pacman.imprimirVidas();
+   
+   // Comienza la cuenta regresiva
+   cuenta_regresiva(LIMITE_IZQUIERDO + 14, LIMITE_SUPERIOR + 13, 1, 3);
+   
+   int tecla = DIRECCION_INVALIDA; ///////////////////// ver si esta línea es necesaria ¿?
+   
+   int tecla_salir;
+   bool repintar = false;
+   
+   int modo_fantasma = MODO_CAZADOR;   // Guarda el modo en el que estaba el fantasma con el que choqué
+   FANTASMA *fantasma = NULL;          // Apunta al fantasma chocado. Si estaba en modo cazador no sirve este dato
+   
+   reinicia_personajes(pacman, fantasmas);
+   do {
+      // Esto es antes de actualizar el puntaje porque al actualizar el puntaje se borra las comidas
+      if (pacman.comioPildora()) { // Verificamos si pacman comió la píldora mágica)
+         // Cambiamos el modo a todos los fantasmas
+         for (int i = 0; i < fantasmas.size(); ++i) {
+            fantasmas[i].setModo(MODO_PRESA);   // Este método se encarga de cambiar el color
+         }
+      }
+      
+      pacman.actualizar_puntaje(); // Actualizamos el puntaje de pacman
+
+      
+      captura_tecla(tecla);   // Capturamos la tecla presionada. Si no presiono nada, conserva su valor antes de entrar a la función
+      pacman.mover(tecla);    // Movemos a pacman (Lo hago así para que pacman siempre esté pintado detrás de los fantasmas al ser comido)
+      imprimir_informacion(pacman, tecla); // Imprimir la información actual: coordenadas, comida, puntaje, etc
+      
+      // Movemos a los fantasmas
+      for (int i = 0; i < fantasmas.size(); ++i) {
+         fantasmas[i].mover();
+      }
+
+      // Verificamos que Pacman haya chocado o no con algún fantasma
+      if (pacman.choque(&fantasmas, modo_fantasma, &fantasma)) {  // Si pacman choca con algún fantasma
+      
+         cout << "\a"; Sleep(1000); // Se hace una pausita luego del choque
+         
+         // Veamos si es que pacman muere o se come al fantasma o simplemente lo ignora (cuando el fantasma está muerto)
+         
+         if (modo_fantasma == MODO_CAZADOR) {  // Si chocaron cuando los fantasmas estaban en modo cazador, pacman pierde
+         
+            fantasma = NULL;     // No nos sirve la dirección del fantasma chocado
+            
+            pacman.setVidas(pacman.getVidas() - 1);  // Disminuimos la vida de pacman
+            
+            if (pacman.getVidas() > 0) {  // Sigue jugando pero disminuye una vida
+            
+               // Regresamos a pacman y a los fantasmas a su posición inicial
+               reinicia_personajes(pacman, fantasmas);
+               
+               // Pintamos al mapa
+               pintar_mapa(mapa, FILAS_MAPA, COLUMNAS_MAPA);
+               
+               // Pintamos a los personajes
+               pacman.pintar();
+               for (int i = 0; i < fantasmas.size(); ++i) {
+                  fantasmas[i].pintar();
+               }
+               
+               // Imprimimos las vida de Pacman
+               pacman.imprimirVidas();
+               
+               // Empieza la cuenta regresiva
+               cuenta_regresiva(LIMITE_IZQUIERDO + 14, LIMITE_SUPERIOR + 13, 1, 3); // Volvemos a empezar
+
+            } else { // Significa que ya murió porque tiene cero vidas
+            
+               gotoxy2(LIMITE_IZQUIERDO + 10, LIMITE_SUPERIOR + 10);
+               cout << "Has perdido xD!!: [s] para salir";
+               
+               bool sal = false;
+               do {
+                  char tecla = getch();
+                  if (tecla == 's') 
+                     sal = true;
+               } while (!sal);
+               // while ((getch() == 's') ? 0 : 1);
+               return;  // Salimos del juego
+            
+            } // fin de if
+            
+         } else if (modo_fantasma == MODO_PRESA) { // Cuando pacman choca a un fantasma en modo presa, pacman se lo come
+            
+            // Cambiar al fantasma a modo MODO_INVISIBLE
+            // Entonces dicho fantasma debe regresar a su casa
+            
+            // Una vez llegado a su casa, debe de volver su estado a modo CAZADOR y empezar con sus coordenadas iniciales
+            
+            
+            
+            ///////////////////////////
+            // Por ahora simplemente haré que cuando un fantasma sea comido, aparezca inmediatamente en su casa
+            // Luego investigaré sobre como hacer para que el fantasma regrese a su casa
+            /*********/
+            
+            
+            
+            fantasma->reiniciar_coordenadas();  // Regresamos al fantasma a su casa (posición inicial)
+            string nombre_fantasma = fantasma->getNombre();
+            fantasma->setModo(MODO_CAZADOR); // Regresamos al modo cazador
+            
+            /*********/
+            
+            
+            // Falta implementar todo esto, cuando los fantasmas regresan a su casa
+            // Usar el puntero "fantasma" con el que podemos modificar al fantasma chocado
+            
+         } else if (modo_fantasma == MODO_INVISIBLE) { // Cuando pacman choca a un fantasma estando en modo invisible, no pasa nada
+            
+         }
+         
+      } else {
+         if (pacman.estadoFinalPacman() == PACMAN_GANADOR) {
+            gotoxy2(LIMITE_IZQUIERDO + 10, LIMITE_SUPERIOR + 10);
+            cout << "Has GANADO :D!!: [s] para salir";
+            bool sal = false; 
+            do {
+               char tecla = getch();
+               if (tecla == 's') 
+                  sal = true;
+            } while (!sal);
+            return;
+         }
+      }
+      
+      
+      Sleep(100); // Hace una pausa muy pequeña en milisegundos
+      
+      /*
+      if (tecla == 's') {
+         tecla = pacman.getDireccion();
+         gotoxy2(LIMITE_IZQUIERDO + 10, LIMITE_SUPERIOR + 10);
+         cout << "Seguro que desea salir del juego (y/n)?: ";
+         tecla_salir = getche();
+         
+         if (tecla_salir == 'y') {
+            return;
+         } else {
+            repintar = true;  // para pintar el mapa solo cuando se haya paralizado el juego
+         }
+      }
+      */
+      
+   } while (tecla_salir != 'y');
+}
 
