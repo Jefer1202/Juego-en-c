@@ -1341,4 +1341,4 @@ void FANTASMA_VERDE::reiniciar_coordenadas() {
    this->setY(LIMITE_SUPERIOR + 11);
 }
 
-//****FIN DE DEFINICIÓN DE CLASES ****
+//****FIN****
