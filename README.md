@@ -1136,3 +1136,209 @@ bool PACMAN::comioPildora() {
       return false;
    }
 }
+
+/----------------------------------------------------------------------------------------------------------------------------------------------Parte de sebas/
+
+
+FANTASMA::FANTASMA(int color, int x, int y, int simbolo) : PERSONAJE(color, x, y, simbolo) {
+   this->setDireccion(DIRECCION_DERECHA);
+   this->setNombre("fantasma");
+   
+   // Modo por defecto es cazador
+   this->setModo(MODO_CAZADOR);
+   this->setTemporizador(0);
+   this->temporizador_activado = false;
+}
+
+void FANTASMA::mover() {
+   // DUDA:
+   /*
+      En la superclase PERSONAJE, se tiene la función virtual mover(int) con un argumento.
+      En la subclase FANTASMA, se está redefiniendo dicha función mediante este nuevo 
+      método mover declarado otra vez en FANTASMA pero con otra funcionalidad.
+      Lo malo es que aquí no se necesita el argumento int.
+      
+      Si en caso, declaro la función mover() sin argumentos en la subclase
+      FANTASMA, estaría redefiniendo la función virtual mover(int) de la superclase?
+      Lo pregunto, porque yo pensé que no lo redefinía, entonces, en ese caso, en
+      la subclase contaría con dos métodos: 
+            mover() sin argumento, heredado del padre OBJETO
+            mover(int) con un argumento, declarado en el hijo FANTASMA
+      Y si mi suposición fuera correcta, al llamar a cualquiera de estas funciones,
+      mi programa no tendría error y se ejecutaría la función correspondiente.
+      Pero cuando intento llamar a la función mover(int) con argumento que
+      supuestamente he heredado del padre, me genera un error
+      error
+   */
+   /*
+   if (fantasma salio de su casa) {
+      salio = true;
+   }*/
+   
+   int direccion = this->getDireccion(); // Dirección hacia donde tienen intención de moverse los fantasmas
+
+   // Si de la matriz de movimientos de pacman, estamos en un lugar donde pacman no ha pasado
+   if (matriz_movimientos[this->getY()][this->getX()] == DIRECCION_INVALIDA) {
+      
+      /* Truco para que se salga de la casita donde están ////////////////////////////*/
+      int mx = this->getXRelativoAlMapa();
+      int my = this->getYRelativoAlMapa();
+      
+      if (mapa[my][mx] == '2') {
+         direccion = DIRECCION_ARRIBA;
+         
+      } else if (mapa[my][mx] == 'i') {
+         direccion = rand() % 2; // Se mueve a la izquierda o a la derecha aleatoriamente
+         
+      } else {
+         direccion = rand() % 4; // Se mueve aleatoriamente hacia cualquier dirección
+      }
+      /**********/
+      
+   } else if (matriz_movimientos[this->getY()][this->getX()] == DIRECCION_IZQUIERDA ||
+              matriz_movimientos[this->getY()][this->getX()] == DIRECCION_DERECHA ||
+              matriz_movimientos[this->getY()][this->getX()] == DIRECCION_ARRIBA ||
+              matriz_movimientos[this->getY()][this->getX()] == DIRECCION_ABAJO) { // Significa que debe seguir a pacman
+              
+         direccion = matriz_movimientos[this->getY()][this->getX()];
+   }
+   
+   /* ESTE CODIGO ERPETIDO ME PERMITE QUE LOS FANTASMAS NO ENTREN A SU CASA O.o , analizar mejor*/
+   int mx = this->getXRelativoAlMapa();
+   int my = this->getYRelativoAlMapa();
+   
+   if (mapa[my][mx] == '2') {
+      direccion = DIRECCION_ARRIBA;
+      
+   } else if (mapa[my][mx] == 'i') {
+      direccion = rand() % 2;
+   }
+   /***********/
+   
+   PERSONAJE::mover(direccion); // Llamada al método mover de la clase padre PERSONAJE
+   /*
+   gotoxy(getX(), getY());
+   this->pintar(); // Llama al método heredado pintar
+   */
+   
+   if (temporizador_activado) {
+      this->setTemporizador(this->getTemporizador() + 1);
+      if (this->getTemporizador() >= TIEMPO_ZOMBIE) {
+         this->setModo(MODO_CAZADOR);
+      }
+   }
+}
+
+void FANTASMA::setModo(int modo) {
+   this->modo = (modo == MODO_CAZADOR || modo == MODO_PRESA || modo == MODO_INVISIBLE) ? modo : MODO_CAZADOR;
+   
+   if (modo == MODO_CAZADOR) {
+      this->temporizador_activado = false;
+      this->setTemporizador(0); // No se cuenta el tiempo
+      this->setColorPredeterminado();  // Regresa a su color original
+      
+   } else if (modo == MODO_PRESA) {
+      this->temporizador_activado = true;
+      this->setTemporizador(0);
+      this->setColor(COLOR_FANTASMA_ZOMBIE); // Se convierte a color zombie
+   }
+}
+
+int FANTASMA::getModo() {
+   return this->modo;
+}
+
+void FANTASMA::reiniciar_coordenadas() {
+   string nombre_fantasma = this->getNombre();
+   
+   if (nombre_fantasma == "Fantasma Rojo") {
+      this->setX(LIMITE_IZQUIERDO + 14);
+      this->setY(LIMITE_SUPERIOR + 9);
+      
+   } else if (nombre_fantasma == "Fantasma Rosado") {
+      this->setX(LIMITE_IZQUIERDO + 13);
+      this->setY(LIMITE_SUPERIOR + 11);
+      
+   } else if (nombre_fantasma == "Fantasma Celeste") {
+      this->setX(LIMITE_IZQUIERDO + 14);
+      this->setY(LIMITE_SUPERIOR + 11);
+      
+   } else if (nombre_fantasma == "Fantasma Verde") {
+      this->setX(LIMITE_IZQUIERDO + 15);
+      this->setY(LIMITE_SUPERIOR + 11);
+   }
+}
+
+void FANTASMA::setColorPredeterminado() {
+   string nombre_fantasma = this->getNombre();
+   int color;
+   
+   if (nombre_fantasma == "Fantasma Rojo") {
+      color = COLOR_FANTASMA1;
+      
+   } else if (nombre_fantasma == "Fantasma Rosado") {
+      color = COLOR_FANTASMA2;
+      
+   } else if (nombre_fantasma == "Fantasma Celeste") {
+      color = COLOR_FANTASMA3;
+      
+   } else if (nombre_fantasma == "Fantasma Verde") {
+      color = COLOR_FANTASMA4;
+   }
+   
+   this->setColor(color);
+}
+
+int FANTASMA::getTemporizador() {
+   return temporizador;
+}
+
+void FANTASMA::setTemporizador(int temporizador) {
+   this->temporizador = temporizador;
+}
+
+// Fantasma Rojo
+FANTASMA_ROJO::FANTASMA_ROJO() 
+   : FANTASMA(COLOR_FANTASMA1, LIMITE_IZQUIERDO + 14, LIMITE_SUPERIOR + 9, CARACTER_FANTASMA) {
+   this->setNombre("Fantasma Rojo");
+}
+
+void FANTASMA_ROJO::reiniciar_coordenadas() {
+   this->setX(LIMITE_IZQUIERDO + 14);
+   this->setY(LIMITE_SUPERIOR + 9);
+}
+
+// Fantasma Rosado
+FANTASMA_ROSADO::FANTASMA_ROSADO()
+   : FANTASMA(COLOR_FANTASMA2, LIMITE_IZQUIERDO + 13, LIMITE_SUPERIOR + 11, CARACTER_FANTASMA) {
+   this->setNombre("Fantasma Rosado");
+}
+
+void FANTASMA_ROSADO::reiniciar_coordenadas() {
+   this->setX(LIMITE_IZQUIERDO + 13);
+   this->setY(LIMITE_SUPERIOR + 11);
+}
+
+// Fantasma Celeste
+FANTASMA_CELESTE::FANTASMA_CELESTE()
+   : FANTASMA(COLOR_FANTASMA3, LIMITE_IZQUIERDO + 14, LIMITE_SUPERIOR + 11, CARACTER_FANTASMA) {
+   this->setNombre("Fantasma Celeste");
+}
+
+void FANTASMA_CELESTE::reiniciar_coordenadas() {
+   this->setX(LIMITE_IZQUIERDO + 14);
+   this->setY(LIMITE_SUPERIOR + 11);
+}
+   
+// Fantasma Verde
+FANTASMA_VERDE::FANTASMA_VERDE()
+   : FANTASMA(COLOR_FANTASMA4, LIMITE_IZQUIERDO + 15, LIMITE_SUPERIOR + 11, CARACTER_FANTASMA) {
+   this->setNombre("Fantasma Verde");
+}
+
+void FANTASMA_VERDE::reiniciar_coordenadas() {
+   this->setX(LIMITE_IZQUIERDO + 15);
+   this->setY(LIMITE_SUPERIOR + 11);
+}
+
+//****FIN DE DEFINICIÓN DE CLASES ****
